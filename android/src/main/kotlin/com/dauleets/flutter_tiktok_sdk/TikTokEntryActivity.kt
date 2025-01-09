@@ -49,6 +49,22 @@ class TikTokEntryActivity : Activity(), IApiEventHandler {
         }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == REQUEST_CODE_TIKTOK_AUTH) {
+            val authCode = data?.getStringExtra("authCode")
+            val error = data?.getStringExtra("error")
+
+            if (!authCode.isNullOrEmpty()) {
+                MethodChannel(flutterEngine?.dartExecutor?.binaryMessenger, "com.dauleets/flutter_tiktok_sdk")
+                    .invokeMethod("onCodeReceived", authCode)
+            } else if (!error.isNullOrEmpty()) {
+                MethodChannel(flutterEngine?.dartExecutor?.binaryMessenger, "com.dauleets/flutter_tiktok_sdk")
+                    .invokeMethod("onError", error)
+            }
+        }
+    }
+
+
     override fun onErrorIntent(intent: Intent) {
         finish()
     }

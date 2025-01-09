@@ -52,21 +52,26 @@ class FlutterTiktokSdkPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, Ac
                 tikTokOpenApi = TikTokOpenApiFactory.create(activity)
                 result.success(null)
             }
-            "login" -> {
-                val request = Authorization.Request()
-                val scope = call.argument<String>("scope")
-                request.scope = scope ?: ""
-                val state = call.argument<String>("state")
-                if (!state.isNullOrEmpty()) {
-                    request.state = state
-                }
+           "login" -> {
+            val clientKey = call.argument<String>("clientKey") ?: ""
+            val scope = call.argument<String>("scope") ?: ""
+            val redirectUri = call.argument<String>("redirectUri") ?: ""
+            val state = call.argument<String>("state") ?: ""
 
-                request.callerLocalEntry = "com.dauleets.flutter_tiktok_sdk.TikTokEntryActivity"
 
-                tikTokOpenApi.authorize(request)
-                loginResult = result
-            }
-            else -> result.notImplemented()
+            val authUrl = "https://www.tiktok.com/v2/auth/authorize" +
+                "?client_key=$clientKey" +
+                "&scope=${Uri.encode(scope)}" +
+                "&redirect_uri=${Uri.encode(redirectUri)}" +
+                "&response_type=code" +
+                "&state=${Uri.encode(state)}"
+
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(authUrl))
+            activity?.startActivity(intent)
+
+            result.success(null)
+        }
+        else -> result.notImplemented()
         }
     }
 
