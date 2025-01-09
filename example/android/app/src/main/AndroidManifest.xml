@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.dauleets.flutter_tiktok_sdk_example">
+    package="com.k9i.flutter_tiktok_sdk_example">
    <application
         android:label="flutter_tiktok_sdk_example"
         android:name="${applicationName}"
@@ -27,7 +27,7 @@
         </activity>
 
          <activity
-            android:name="com.dauleets.flutter_tiktok_sdk.TikTokEntryActivity"
+            android:name="com.k9i.flutter_tiktok_sdk.TikTokEntryActivity"
             android:exported="true" />
 
         <!-- Don't delete the meta-data below.
