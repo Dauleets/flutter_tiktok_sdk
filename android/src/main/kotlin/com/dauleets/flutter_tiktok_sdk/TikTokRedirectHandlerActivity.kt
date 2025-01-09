@@ -10,6 +10,11 @@ class TikTokRedirectHandlerActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val channel = MethodChannel(
+            (application as FlutterApplication).flutterEngine?.dartExecutor?.binaryMessenger,
+            "com.dauleets/flutter_tiktok_sdk"
+        )
+        channel.invokeMethod("onCodeReceived", code)
 
         val uri = intent.data
         if (uri != null && uri.toString().startsWith("https://behype.io/tiktoksuccesslogin")) {
@@ -31,6 +36,7 @@ class TikTokRedirectHandlerActivity : Activity() {
                 val errorIntent = Intent().apply {
                     putExtra("error", error)
                 }
+
                 setResult(Activity.RESULT_CANCELED, errorIntent)
             }
         }
