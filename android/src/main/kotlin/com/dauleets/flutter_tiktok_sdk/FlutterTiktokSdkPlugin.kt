@@ -13,6 +13,7 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.PluginRegistry
+import android.net.Uri
 
 /** FlutterTiktokSdkPlugin */
 class FlutterTiktokSdkPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware, PluginRegistry.NewIntentListener {
@@ -67,6 +68,8 @@ class FlutterTiktokSdkPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, Ac
                 "&state=${Uri.encode(state)}"
 
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(authUrl))
+            Log.d("TikTokAuth", "Redirect URI: $authUrl")
+
             activity?.startActivity(intent)
 
             result.success(null)

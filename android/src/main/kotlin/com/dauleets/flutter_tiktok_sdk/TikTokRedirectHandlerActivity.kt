@@ -7,14 +7,8 @@ import android.os.Bundle
 import android.util.Log
 
 class TikTokRedirectHandlerActivity : Activity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val channel = MethodChannel(
-            (application as FlutterApplication).flutterEngine?.dartExecutor?.binaryMessenger,
-            "com.dauleets/flutter_tiktok_sdk"
-        )
-        channel.invokeMethod("onCodeReceived", code)
 
         val uri = intent.data
         if (uri != null && uri.toString().startsWith("https://behype.io/tiktoksuccesslogin")) {
@@ -23,23 +17,14 @@ class TikTokRedirectHandlerActivity : Activity() {
             val error = uri.getQueryParameter("error")
 
             if (!code.isNullOrEmpty()) {
-                // Успешная авторизация
-                Log.d("TikTokAuth", "Authorization code: $code")
-                val resultIntent = Intent().apply {
-                    putExtra("authCode", code)
-                    putExtra("state", state)
-                }
-                setResult(Activity.RESULT_OK, resultIntent)
+                MethodChannel(FlutterEngineCache.getInstance().get("your_engine_id")!!.dartExecutor, "com.dauleets/flutter_tiktok_sdk")
+                    .invokeMethod("onCodeReceived", code)
             } else if (!error.isNullOrEmpty()) {
-                // Ошибка авторизации
-                Log.e("TikTokAuth", "Error: $error")
-                val errorIntent = Intent().apply {
-                    putExtra("error", error)
-                }
-
-                setResult(Activity.RESULT_CANCELED, errorIntent)
+                MethodChannel(FlutterEngineCache.getInstance().get("your_engine_id")!!.dartExecutor, "com.dauleets/flutter_tiktok_sdk")
+                    .invokeMethod("onError", error)
             }
         }
+
         finish()
     }
 }
