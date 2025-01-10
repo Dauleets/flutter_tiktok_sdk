@@ -29,6 +29,12 @@
          <activity
             android:name="com.k9i.flutter_tiktok_sdk.TikTokEntryActivity"
             android:exported="true" />
+             <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https://behype.io/tiktoksuccesslogin" />
+            </intent-filter>
 
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
