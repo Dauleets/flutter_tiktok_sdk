@@ -58,8 +58,7 @@ class FlutterTiktokSdkPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, Ac
             val scope = call.argument<String>("scope") ?: ""
             val redirectUri = call.argument<String>("redirectUri") ?: ""
             val state = call.argument<String>("state") ?: ""
-
-
+            
             val authUrl = "https://www.tiktok.com/v2/auth/authorize" +
                 "?client_key=$clientKey" +
                 "&scope=${Uri.encode(scope)}" +
