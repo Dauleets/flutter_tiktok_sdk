@@ -13,7 +13,6 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.PluginRegistry
-import android.net.Uri
 
 /** FlutterTiktokSdkPlugin */
 class FlutterTiktokSdkPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware, PluginRegistry.NewIntentListener {
@@ -53,25 +52,21 @@ class FlutterTiktokSdkPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, Ac
                 tikTokOpenApi = TikTokOpenApiFactory.create(activity)
                 result.success(null)
             }
-           "login" -> {
-            val clientKey = call.argument<String>("clientKey") ?: ""
-            val scope = call.argument<String>("scope") ?: ""
-            val redirectUri = call.argument<String>("redirectUri") ?: ""
-            val state = call.argument<String>("state") ?: ""
-            
-            val authUrl = "https://www.tiktok.com/v2/auth/authorize" +
-                "?client_key=$clientKey" +
-                "&scope=${Uri.encode(scope)}" +
-                "&redirect_uri=${Uri.encode(redirectUri)}" +
-                "&response_type=code" +
-                "&state=${Uri.encode(state)}"
+            "login" -> {
+                val request = Authorization.Request()
+                val scope = call.argument<String>("scope")
+                request.scope = scope ?: ""
+                val state = call.argument<String>("state")
+                if (!state.isNullOrEmpty()) {
+                    request.state = state
+                }
 
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(authUrl))
-            activity?.startActivity(intent)
+                request.callerLocalEntry = "com.dauleets.flutter_tiktok_sdk.TikTokEntryActivity"
 
-            result.success(null)
-        }
-        else -> result.notImplemented()
+                tikTokOpenApi.authorize(request)
+                loginResult = result
+            }
+            else -> result.notImplemented()
         }
     }
 

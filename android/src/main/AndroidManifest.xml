@@ -5,19 +5,10 @@
         android:label="@string/app_name">
 
         <!-- Другие настройки, например, активити TikTok -->
-      <activity
-        android:name="com.dauleets.flutter_tiktok_sdk.TikTokRedirectHandlerActivity"
+    <activity
+        android:name=".FlutterTiktokSdkPlugin"
         android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:scheme="https"
-                    android:host="behype.io"
-                    android:pathPrefix="/tiktoksuccesslogin" />
-            </intent-filter>
-        </activity>
+    </activity>
 
     </application>
 </manifest>
