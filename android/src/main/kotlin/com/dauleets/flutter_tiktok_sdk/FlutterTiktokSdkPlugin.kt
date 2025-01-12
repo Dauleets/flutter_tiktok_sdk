@@ -1,5 +1,6 @@
 package com.dauleets.flutter_tiktok_sdk
 
+import io.flutter.embedding.android.FlutterActivity
 import android.app.Activity
 import android.content.Intent
 import androidx.annotation.NonNull
@@ -13,6 +14,7 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.PluginRegistry
+
 
 /** FlutterTiktokSdkPlugin */
 class FlutterTiktokSdkPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware, PluginRegistry.NewIntentListener {
@@ -64,6 +66,11 @@ class FlutterTiktokSdkPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, Ac
                 request.callerLocalEntry = "com.dauleets.flutter_tiktok_sdk.TikTokEntryActivity"
 
                 tikTokOpenApi.authorize(request)
+                loginResult = result
+            }
+            "login" -> {
+                val intent = Intent(activity, TikTokWebAuthActivity::class.java)
+                activity?.startActivityForResult(intent, TikTokWebAuthActivity.REQUEST_CODE)
                 loginResult = result
             }
             else -> result.notImplemented()
