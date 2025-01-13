@@ -9,8 +9,6 @@ import com.bytedance.sdk.open.tiktok.authorize.model.Authorization
 import com.bytedance.sdk.open.tiktok.common.handler.IApiEventHandler
 import com.bytedance.sdk.open.tiktok.common.model.BaseReq
 import com.bytedance.sdk.open.tiktok.common.model.BaseResp
-import io.flutter.embedding.android.FlutterActivity
-
 
 // Activity receiving callbacks from TikTok Sdk
 class TikTokEntryActivity : Activity(), IApiEventHandler {
