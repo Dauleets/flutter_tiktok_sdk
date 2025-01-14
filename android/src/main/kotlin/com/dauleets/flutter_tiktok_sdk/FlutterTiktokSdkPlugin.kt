@@ -13,6 +13,9 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.PluginRegistry
 
+import java.security.MessageDigest
+import java.security.SecureRandom
+
 class FlutterTiktokSdkPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware, PluginRegistry.NewIntentListener {
 
     private lateinit var channel: MethodChannel
@@ -44,7 +47,7 @@ class FlutterTiktokSdkPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, A
                 val authRequest = AuthRequest(
                     clientKey = call.argument<String>("clientKey") ?: "",
                     scope = scope,
-                    redirectUri = "https://your-redirect-uri.com",
+                    redirectUri = "https://behype.io/tiktoksuccesslogin",
                     codeVerifier = codeVerifier,
                     state = state,
                 )
@@ -104,5 +107,24 @@ class FlutterTiktokSdkPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, A
 
     override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
+    }
+}
+
+
+object PKCEUtils {
+    private const val BYTE_ARRAY_SIZE = 32
+
+    fun generateCodeVerifier(): String {
+        val alphanumeric = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+        val secureRandom = SecureRandom()
+        return (1..BYTE_ARRAY_SIZE)
+            .map { alphanumeric[secureRandom.nextInt(alphanumeric.size)] }
+            .joinToString("")
+    }
+
+    fun generateCodeChallenge(codeVerifier: String): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hashBytes = digest.digest(codeVerifier.toByteArray(Charsets.UTF_8))
+        return hashBytes.joinToString("") { "%02x".format(it) }
     }
 }
