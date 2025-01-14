@@ -3,59 +3,54 @@ package com.dauleets.flutter_tiktok_sdk
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import com.bytedance.sdk.open.tiktok.TikTokOpenApiFactory
-import com.bytedance.sdk.open.tiktok.api.TikTokOpenApi
-import com.bytedance.sdk.open.tiktok.authorize.model.Authorization
-import com.bytedance.sdk.open.tiktok.common.handler.IApiEventHandler
-import com.bytedance.sdk.open.tiktok.common.model.BaseReq
-import com.bytedance.sdk.open.tiktok.common.model.BaseResp
+import com.tiktok.open.sdk.auth.AuthApi
+import com.tiktok.open.sdk.auth.AuthResponse
+import com.tiktok.open.sdk.core.model.BaseReq
+import com.tiktok.open.sdk.core.model.BaseResp
+import com.tiktok.open.sdk.core.constants.Keys
+import com.tiktok.open.sdk.auth.webauth.WebAuthHelper
 
-// Activity receiving callbacks from TikTok Sdk
-class TikTokEntryActivity : Activity(), IApiEventHandler {
-    private lateinit var tikTokOpenApi: TikTokOpenApi
+class TikTokEntryActivity : Activity() {
+
+    private lateinit var authApi: AuthApi
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        tikTokOpenApi = TikTokOpenApiFactory.create(this)
-        tikTokOpenApi.handleIntent(intent, this)
+        authApi = AuthApi(this)
+
+        // Handle the intent passed from TikTok SDK
+        handleAuthResponse(intent)
     }
 
-    override fun onReq(req: BaseReq) {
-    }
+    private fun handleAuthResponse(intent: Intent?) {
+        val redirectUrl = "https://your-redirect-uri.com" // Укажите ваш redirect URL
+        val authResponse: AuthResponse? = authApi.getAuthResponseFromIntent(intent, redirectUrl)
 
-    override fun onResp(resp: BaseResp) {
-        if (resp is Authorization.Response) {
+        if (authResponse != null) {
             val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
             if (launchIntent == null) {
                 finish()
                 return
             }
-            launchIntent.putExtra(TIKTOK_LOGIN_RESULT_SUCCESS, resp.isSuccess)
+
             launchIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
-            if (resp.isSuccess) {
-                launchIntent.putExtra(TIKTOK_LOGIN_RESULT_AUTH_CODE, resp.authCode)
-                launchIntent.putExtra(TIKTOK_LOGIN_RESULT_STATE, resp.state)
-                launchIntent.putExtra(TIKTOK_LOGIN_RESULT_GRANTED_PERMISSIONS, resp.grantedPermissions)
+            if (authResponse.authCode.isNotEmpty()) {
+                launchIntent.putExtra(TIKTOK_LOGIN_RESULT_SUCCESS, true)
+                launchIntent.putExtra(TIKTOK_LOGIN_RESULT_AUTH_CODE, authResponse.authCode)
+                launchIntent.putExtra(TIKTOK_LOGIN_RESULT_STATE, authResponse.state)
+                launchIntent.putExtra(TIKTOK_LOGIN_RESULT_GRANTED_PERMISSIONS, authResponse.grantedPermissions)
             } else {
-                launchIntent.putExtra(TIKTOK_LOGIN_RESULT_CANCEL, resp.isCancel)
-                launchIntent.putExtra(TIKTOK_LOGIN_RESULT_ERROR_CODE, resp.errorCode)
-                launchIntent.putExtra(TIKTOK_LOGIN_RESULT_ERROR_MSG, resp.errorMsg)
+                launchIntent.putExtra(TIKTOK_LOGIN_RESULT_SUCCESS, false)
+                launchIntent.putExtra(TIKTOK_LOGIN_RESULT_ERROR_CODE, authResponse.errorCode)
+                launchIntent.putExtra(TIKTOK_LOGIN_RESULT_ERROR_MSG, authResponse.errorMsg)
             }
             startActivity(launchIntent)
-            finish()
-        } else {
-            // TODO Video Kit Implementation
-            finish()
         }
-    }
-
-    override fun onErrorIntent(intent: Intent) {
         finish()
     }
 
     companion object {
         const val TIKTOK_LOGIN_RESULT_SUCCESS = "TIKTOK_LOGIN_RESULT_SUCCESS"
-        const val TIKTOK_LOGIN_RESULT_CANCEL = "TIKTOK_LOGIN_RESULT_CANCEL"
         const val TIKTOK_LOGIN_RESULT_AUTH_CODE = "TIKTOK_LOGIN_RESULT_AUTH_CODE"
         const val TIKTOK_LOGIN_RESULT_STATE = "TIKTOK_LOGIN_RESULT_STATE"
         const val TIKTOK_LOGIN_RESULT_GRANTED_PERMISSIONS = "TIKTOK_LOGIN_RESULT_GRANTED_PERMISSIONS"
