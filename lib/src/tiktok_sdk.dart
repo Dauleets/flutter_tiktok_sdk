@@ -28,6 +28,18 @@ class TikTokSDK {
     );
   }
 
+  void listenToLinks() {
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'onLinkOpened') {
+        final link = call.arguments as String;
+        print('Received link: $link');
+        // Можете обработать ссылку, например, сохранить или отобразить.
+      }
+    });
+  }
+
+  
+
   /// login TikTok
   ///
   /// [permissionType] You must apply for permissions at the time of app registration.

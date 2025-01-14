@@ -103,6 +103,14 @@ class FlutterTiktokSdkPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, Ac
     }
 
     override fun onNewIntent(intent: Intent): Boolean {
+        val uri = intent.data
+        if (uri != null) {
+            // Отправка ссылки в Flutter
+            val linkData = uri.toString()
+            channel.invokeMethod("onLinkOpened", linkData)
+            return true
+        }
+        return super.onNewIntent(intent)
         val isSuccess = intent.getBooleanExtra(TikTokEntryActivity.TIKTOK_LOGIN_RESULT_SUCCESS, false)
         if (isSuccess) {
             val resultMap = mapOf(
