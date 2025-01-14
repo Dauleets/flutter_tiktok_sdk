@@ -43,50 +43,34 @@ class TikTokSDK {
   /// login TikTok
   ///
   /// [permissionType] You must apply for permissions at the time of app registration.
-  Future<TikTokLoginResult> login({
+ Future<TikTokLoginResult> login({
     required Set<TikTokPermissionType> permissions,
     String? state,
   }) async {
-    try {
-      final scope =
-          permissions.map((permission) => permission.scopeName).join(',');
-      final result = await _channel.invokeMapMethod<String, Object>(
-        'login',
-        <String, dynamic>{
-          'scope': scope,
-          'state': state,
-        },
-      );
+    final scope = permissions.map((e) => e.scopeName).join(',');
+    final result = await _channel.invokeMapMethod<String, dynamic>(
+      'login',
+      {'scope': scope, 'state': state},
+    );
 
-      if (result != null) {
-        final grantedPermissionsStringList =
-            (result['grantedPermissions'] as String).split(',');
-        final grantedPermissions = grantedPermissionsStringList
-            .map((permission) => _fromScopeName(permission))
-            .whereType<TikTokPermissionType>()
-            .toSet();
-
-        return TikTokLoginResult(
-          status: TikTokLoginStatus.success,
-          authCode: result["authCode"] as String,
-          state: result["state"] as String?,
-          grantedPermissions: grantedPermissions,
-        );
-      } else {
-        return const TikTokLoginResult(
-          status: TikTokLoginStatus.error,
-        );
-      }
-    } on PlatformException catch (e) {
-      final status = e.code == "-2"
-          ? TikTokLoginStatus.cancelled
-          : TikTokLoginStatus.error;
+    if (result != null) {
+      final grantedPermissions = (result['grantedPermissions'] as String)
+          .split(',')
+          .map((e) => TikTokPermissionType.values.firstWhere(
+                (perm) => perm.scopeName == e,
+                orElse: () => TikTokPermissionType.userInfoBasic,
+              ))
+          .whereType<TikTokPermissionType>()
+          .toSet();
 
       return TikTokLoginResult(
-        status: status,
-        errorCode: e.code,
-        errorMessage: e.message,
+        status: TikTokLoginStatus.success,
+        authCode: result['authCode'],
+        state: result['state'],
+        grantedPermissions: grantedPermissions,
       );
+    } else {
+      return TikTokLoginResult(status: TikTokLoginStatus.error);
     }
   }
 }
