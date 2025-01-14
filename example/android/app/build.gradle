@@ -65,5 +65,6 @@ flutter {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation 'com.bytedance.ies.ugc.aweme:opensdk-oversea-external:0.2.1.2'
+    implementation 'com.tiktok.open.sdk:tiktok-open-sdk-core:2.2.0'
+    implementation 'com.tiktok.open.sdk:tiktok-open-sdk-auth:2.2.0'
 }
