@@ -40,12 +40,18 @@ class FlutterTiktokSdkPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, A
                 result.success(null)
             }
             "login" -> {
+                val clientKey = call.argument<String>("clientKey") ?: ""
                 val scope = call.argument<String>("scope") ?: ""
                 val state = call.argument<String>("state") ?: ""
                 val codeVerifier = PKCEUtils.generateCodeVerifier()
 
+                if (clientKey.isEmpty()) {
+                    result.error("invalid_client_key", "Client key is missing or invalid", null)
+                    return
+                }
+
                 val authRequest = AuthRequest(
-                    clientKey = call.argument<String>("clientKey") ?: "",
+                    clientKey = clientKey,
                     scope = scope,
                     redirectUri = "https://behype.io/tiktoksuccesslogin",
                     codeVerifier = codeVerifier,
@@ -90,7 +96,7 @@ class FlutterTiktokSdkPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, A
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity
-        binding.addOnNewIntentListener(this)
+        tikTokAuthApi = AuthApi(activity!!)
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
