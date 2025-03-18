@@ -7,7 +7,7 @@
 
         <!-- Другие настройки, например, активити TikTok -->
     <activity
-        android:name=".FlutterTiktokSdkPlugin"
+        android:name=".MainActivity"
         android:exported="true">
     </activity>
 
