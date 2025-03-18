@@ -10,7 +10,7 @@ import com.tiktok.open.sdk.auth.AuthApi
 import com.tiktok.open.sdk.auth.AuthRequest
 import com.tiktok.open.sdk.auth.utils.PKCEUtils
 
-class MainActivity : FlutterActivity() {
+class FlutterTiktokSdkPlugin : FlutterActivity() {
     private lateinit var authApi: AuthApi
     private val CHANNEL = "com.dauleets/flutter_tiktok_sdk"
     private var codeVerifier: String? = null
