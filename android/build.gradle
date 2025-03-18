@@ -27,7 +27,7 @@ apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 31
-    namespace "ccom.dauleets.flutter_tiktok_sdk" 
+    namespace "com.dauleets.flutter_tiktok_sdk" 
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
