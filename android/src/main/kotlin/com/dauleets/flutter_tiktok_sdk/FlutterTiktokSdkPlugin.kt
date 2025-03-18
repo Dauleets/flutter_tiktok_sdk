@@ -1,92 +1,136 @@
-package io.behype.android
+package com.dauleets.flutter_tiktok_sdk
 
+import android.app.Activity
 import android.content.Intent
-import android.os.Bundle
-import android.util.Log
-import io.flutter.embedding.android.FlutterActivity
-import io.flutter.embedding.engine.FlutterEngine
-import io.flutter.plugin.common.MethodChannel
+import androidx.annotation.NonNull
 import com.tiktok.open.sdk.auth.AuthApi
 import com.tiktok.open.sdk.auth.AuthRequest
-import com.tiktok.open.sdk.auth.utils.PKCEUtils
+import com.tiktok.open.sdk.auth.AuthResponse
+import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.MethodCall
+import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.PluginRegistry
 
-class FlutterTiktokSdkPlugin : FlutterActivity() {
-    private lateinit var authApi: AuthApi
-    private val CHANNEL = "com.dauleets/flutter_tiktok_sdk"
-    private var codeVerifier: String? = null
-    private val redirectUri = "https://behype.io/tiktoksuccesslogin"
+import java.security.MessageDigest
+import java.security.SecureRandom
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        Log.d("TikTokAuth", "MainActivity onCreate - INIT")
-        authApi = AuthApi(activity = this)
-        handleAuthResponse(intent)
+class FlutterTiktokSdkPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware, PluginRegistry.NewIntentListener {
+
+    private lateinit var channel: MethodChannel
+    private var activity: Activity? = null
+    private var tikTokAuthApi: AuthApi? = null
+    private var loginResult: MethodChannel.Result? = null
+
+    override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "com.dauleets/flutter_tiktok_sdk")
+        channel.setMethodCallHandler(this)
     }
 
-    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
-        super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
-            if (call.method == "authorize") {
-                Log.d("TikTokAuth", "Flutter called 'authorize'")
-                authorize()
+    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: MethodChannel.Result) {
+        when (call.method) {
+            "setup" -> {
+                val clientKey = call.argument<String>("clientKey")
+                if (clientKey.isNullOrEmpty()) {
+                    result.error("invalid_client_key", "Client key is missing or invalid", null)
+                    return
+                }
+                tikTokAuthApi = AuthApi(activity!!)
                 result.success(null)
-            } else {
-                result.notImplemented()
             }
+            "login" -> {
+                val clientKey = call.argument<String>("clientKey") ?: ""
+                val scope = call.argument<String>("scope") ?: ""
+                val state = call.argument<String>("state") ?: ""
+                val codeVerifier = PKCEUtils.generateCodeVerifier()
+
+                if (clientKey.isEmpty()) {
+                    result.error("invalid_client_key", "Client key is missing or invalid", null)
+                    return
+                }
+
+                val authRequest = AuthRequest(
+                    clientKey = clientKey,
+                    scope = scope,
+                    redirectUri = "https://behype.io/tiktoksuccesslogin",
+                    codeVerifier = codeVerifier,
+                    state = state,
+                )
+
+                val success = tikTokAuthApi?.authorize(authRequest, AuthApi.AuthMethod.ChromeTab) ?: false
+                if (!success) {
+                    result.error("authorization_failed", "Authorization process could not be started", null)
+                } else {
+                    loginResult = result
+                }
+            }
+            else -> result.notImplemented()
         }
     }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        Log.d("TikTokAuth", "onNewIntent: ${intent.data}")
-        handleAuthResponse(intent)
-    }
+    override fun onNewIntent(intent: Intent): Boolean {
+        val redirectUrl = "https://your-redirect-uri.com"
+        val authResponse = tikTokAuthApi?.getAuthResponseFromIntent(intent, redirectUrl)
 
-    private fun authorize() {
-        codeVerifier = PKCEUtils.generateCodeVerifier()
-        Log.d("TikTokAuth", "Generated codeVerifier: $codeVerifier")
-
-        val request = AuthRequest(
-            clientKey = "awap9f1y7lyavyr7",
-            scope = "user.info.basic",
-            redirectUri = redirectUri,
-            codeVerifier = codeVerifier!!
-        )
-
-        Log.d("TikTokAuth", "Sending TikTok authorize request (TikTokApp)")
-        authApi.authorize(request, AuthApi.AuthMethod.TikTokApp)
-    }
-
-    private fun handleAuthResponse(intent: Intent) {
-    val data = intent.data
-    Log.d("TikTokAuth", "🔄 handleAuthResponse: ${data.toString()}")
-
-    if (data != null) {
-        val authCode = data.getQueryParameter("code")
-        if (!authCode.isNullOrEmpty()) {
-            Log.d("TikTokAuth", "✅ Получен authCode из URI: $authCode")
-            
-            val sharedPref = getSharedPreferences("tikTokPrefs", MODE_PRIVATE)
-            sharedPref.edit().putString("authCode", authCode).apply()
-
-            sendAuthCodeToFlutter(authCode)
-            return
+        if (authResponse != null) {
+            if (authResponse.authCode.isNotEmpty()) {
+                val resultData = mapOf(
+                    "authCode" to authResponse.authCode,
+                    "state" to authResponse.state,
+                    "grantedPermissions" to authResponse.grantedPermissions,
+                )
+                loginResult?.success(resultData)
+            } else {
+                loginResult?.error(
+                    authResponse.errorCode.toString(),
+                    authResponse.errorMsg ?: "Unknown error",
+                    null
+                )
+            }
+            loginResult = null
+            return true
         }
+        return false
     }
 
-        Log.e("TikTokAuth", "❌ Ошибка: код отсутствует в intent.data")
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        activity = binding.activity
+        tikTokAuthApi = AuthApi(activity!!)
     }
 
-
-    private fun sendAuthCodeToFlutter(authCode: String?) {
-        Log.d("TikTokAuth", "Sending authCode to Flutter: $authCode")
-        MethodChannel(flutterEngine!!.dartExecutor.binaryMessenger, CHANNEL)
-            .invokeMethod("onAuthCodeReceived", authCode)
+    override fun onDetachedFromActivityForConfigChanges() {
+        activity = null
     }
 
-    private fun logErrorToFlutter(errorMessage: String) {
-        Log.e("TikTokAuth", "Sending error to Flutter: $errorMessage")
-        MethodChannel(flutterEngine!!.dartExecutor.binaryMessenger, CHANNEL)
-            .invokeMethod("onAuthError", errorMessage)
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        activity = binding.activity
+    }
+
+    override fun onDetachedFromActivity() {
+        activity = null
+    }
+
+    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+        channel.setMethodCallHandler(null)
+    }
+}
+
+
+object PKCEUtils {
+    private const val BYTE_ARRAY_SIZE = 32
+
+    fun generateCodeVerifier(): String {
+        val alphanumeric = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+        val secureRandom = SecureRandom()
+        return (1..BYTE_ARRAY_SIZE)
+            .map { alphanumeric[secureRandom.nextInt(alphanumeric.size)] }
+            .joinToString("")
+    }
+
+    fun generateCodeChallenge(codeVerifier: String): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hashBytes = digest.digest(codeVerifier.toByteArray(Charsets.UTF_8))
+        return hashBytes.joinToString("") { "%02x".format(it) }
     }
 }
